@@ -7,11 +7,26 @@
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
+    "csv": "^6.2.4",
+    "csv-parse": "^5.3.3",
     "debug": "~2.6.9",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
-    "jade": "~1.11.0",
+    "jade": "^1.9.2",
     "morgan": "~1.9.1",
-    "socket.io": "^4.5.3"
-  }
+    "socket.io": "^4.5.4"
+  },
+  "description": "express 환경에서 socket 연결을 하는 샘플 프로젝트입니다.",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kw-ic-web/express_socket.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kw-ic-web/express_socket/issues"
+  },
+  "homepage": "https://github.com/kw-ic-web/express_socket#readme"
 }

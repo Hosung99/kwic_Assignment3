@@ -1,103 +1,238 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>HTML 5 Boilerplate</title>
-    <link rel="stylesheet" href="/stylesheets/style.css" />
-    <!-- CSS only -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi"
-      crossorigin="anonymous"
-    />
-    <script
-      src="https://cdn.socket.io/4.5.3/socket.io.min.js"
-      integrity="sha384-WPFUvHkB1aHA5TDSZi6xtDgkF0wXJcIIxXhC6h8OT8EH3fC5PWro5pWJ1THjcfEi"
-      crossorigin="anonymous"
-    ></script>
-    <script>
-      const socket = io();
-      socket.on("connect", () => {
-        socket.emit("event1", "hello kw!");
-      });
+<html lang="ko">
 
-      socket.on("getID", (data) => {
-        document
-          .getElementById("myid")
-          .appendChild(
-            document
-              .createElement("p")
-              .appendChild(document.createTextNode(`MY ID: ${data}`))
-          );
-      });
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>HTML 5 Boilerplate</title>
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <!-- CSS only -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous" />
+  <script src="https://cdn.socket.io/4.5.3/socket.io.min.js"
+    integrity="sha384-WPFUvHkB1aHA5TDSZi6xtDgkF0wXJcIIxXhC6h8OT8EH3fC5PWro5pWJ1THjcfEi"
+    crossorigin="anonymous"></script>
+  <script>
+    let time = 10;
+    let userID = "";
+    const socket = io(); //cdn에서 가져온 io
+    socket.on("connect", (data) => { //최초접속
+      socket.emit("firstEvent");
+    });
 
-      socket.on("msg", (data) => {
-        let log = document.getElementById("msg");
-        let ptag = document.createElement("p");
-        let node = document.createTextNode(
-          `${data.id} 에서 보낸 메시지 : ${data.message}`
-        );
-        ptag.appendChild(node);
-        log.appendChild(ptag);
-        //console.log(data.id, "에서 보낸 메시지 : ", data.message);
-      });
+    socket.on("getID", (data) => {
+      userID = data;
+      console.log("유저 아이디 :" + userID);
+    });
 
-      const input = () => {
-        let data = document.getElementById("input_msg").value;
-        socket.emit("input", data);
-      };
+    const ready = () => {
+      let nickname = document.getElementById("input_name").value;
+      console.log(nickname);
+      socket.emit("ready", nickname, userID);
+      document.getElementById("readyBtn").disabled = true;
 
-      const inputWM = () => {
-        let data = document.getElementById("input_msg").value;
-        socket.emit("inputWM", data);
-      };
+    };
 
-      const privatemsg = () => {
-        let data = document.getElementById("input_msg").value;
-        let id = document.getElementById("input_id").value;
-        socket.emit("private", id, data);
-      };
-    </script>
-  </head>
-  <body>
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-3"></div>
-        <div class="col-6">
-          <div id="myid"></div>
-          <div id="msg"></div>
-          <form action="#">
-            <input
-              type="text"
-              class="form-control mb-3"
-              id="input_msg"
-              placeholder="보낼메시지"
-              autocomplete="off"
-            />
-            <input
-              type="text"
-              class="form-control mb-3"
-              id="input_id"
-              placeholder="수신ID"
-              autocomplete="off"
-            />
-          </form>
-          <button class="btn btn-primary mb-3" onclick="input()">
-            모두에게
-          </button>
-          <button class="btn btn-primary mb-3" onclick="inputWM()">
-            나빼고
-          </button>
-          <button class="btn btn-primary mb-3" onclick="privatemsg()">
-            특정사용자에게
-          </button>
+    socket.on("wait", (data) => {
+      let v = document.getElementById("status");
+      v.replaceWith(`현재 상태 : ${data}`);
+    });
+    socket.on("wait2", (data) => {
+      socket.emit("countdownsstopbtn");
+      let v = document.getElementById("nameFormStatus").innerHTML = data;
+    });
+
+
+
+    socket.on("TimerStart", (data) => {
+      //data는  "내 턴!"
+      document.getElementById("myTurn").innerHTML = data;
+      socket.emit("countdownBtn");
+      console.log("타이머 시작");
+    });
+
+    socket.on("countdown", (data) => {
+      let timecount = document.getElementById("countTime");
+      timecount.innerHTML = data;
+    });
+    socket.on("gameFinish", (data) => {
+      alert(data);
+      socket.emit("countdownsstopbtn");
+      document.getElementById("answerList").innerHTML = " ";
+    });
+
+    function gameBtnPush() {
+
+      let answer = document.getElementById("gameText").value;
+      if (answer == "") {
+        alert("빈칸으로 입력하셨습니다.")
+        return;
+      }
+      document.getElementById("gameBtn").disabled = true;
+      socket.emit("countdownstopbtn");
+      document.getElementById("myTurn").innerHTML = "턴을 기다리세요";
+      socket.emit("answerPush", answer, userID)
+      document.getElementById("gameText").value = null;
+    }
+    socket.on("gameWait", () => {
+      console.log("1123123");
+      document.getElementById("myTurn").innerHTML = "턴을 기다리세요";
+    });
+    socket.on("answerPlus", (data) => {
+      document.getElementById("answerList").appendChild(document.createElement("p")).appendChild(document.createTextNode(data));
+    });
+
+    socket.on("gameReplay", () => {
+      document.getElementById("replay").style.display = "block";
+    });
+
+
+    socket.on("cancel", () => {
+      socket.emit("ready1");
+    });
+
+    socket.on("wait1", () => {
+      document.getElementById("nameForm").style.display = "block";
+      document.getElementById("gameForm").style.display = "none";
+    });
+
+    socket.on("start", (data) => {
+
+      document.getElementById("nameForm").style.display = "none";
+      document.getElementById("gameForm").style.display = "block";
+      document.getElementById("window_status").style.display = "none";
+      document.getElementById("replay").style.display = "none";
+      document.getElementById("waiting").innerHTML = " ";
+      document.getElementById("myTurn").innerHTML = "턴을 기다리세요";
+      document.getElementById("nameFormStatus").innerHTML = "";
+      for (let i = 0; i < 3; i++) {
+        let name = document.getElementById(`username${i}`);
+        name.innerHTML = data[i].nickname + " : " + data[i].point;
+      }
+    });
+    socket.on("start2", (data) => {
+      document.getElementById("waiting").innerHTML = " ";
+      document.getElementById("replay").style.display = "none";
+      document.getElementById("rePlayBtn").disabled = false;
+      for (let i = 0; i < 3; i++) {
+        let name = document.getElementById(`username${i}`);
+        name.innerHTML = data[i].nickname + " : " + data[i].point;
+      }
+      document.getElementById("waiting").innerHTML = " ";
+    });
+    socket.on("start3", () => {
+      document.getElementById("waiting").innerHTML = " ";
+    })
+    socket.on("plusOne", (data) => {
+      console.log(data);
+      for (let i = 0; i < 3; i++) {
+        let name = document.getElementById(`username${i}`);
+        name.innerHTML = data[i].nickname + " : " + data[i].point;
+      }
+    });
+    socket.on("refuse", (data) => {
+      let v = document.getElementById("status");
+      v.replaceWith(`현재 상태 : ${data}`);
+    });
+    socket.on("gameReplayReady", (data) => {
+      document.getElementById("waiting").innerHTML = data;
+    });
+    function readyBtnOn() {
+      document.getElementById("readyBtn").disabled = false;
+    };
+    socket.on("myTurnBtn", () => {
+      console.log("btn활성화");
+      document.getElementById("gameBtn").disabled = false;
+    });
+    function gameReplay2() {
+      let checkvalue
+        = document.getElementsByName('choose');
+      document.getElementById("rePlayBtn").disabled = true;
+      checkvalue.forEach((node) => {
+        if (node.checked) { //1==다시 2==다시안함 = 나감.
+          if (node.value == 1) {
+            socket.emit("Agree");
+            console.log("agree");
+          }
+          if (node.value == 2) {
+            console.log("notAgree");
+            socket.emit("notAgree");
+            socket.emit("disconnect");
+          }
+        }
+      })
+    }
+
+  </script>
+  <style>
+    .gameForm {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="window_status" class="container-fluid">
+    <div class="row">
+      <div class="col-3">
+      </div>
+      <div id="status" class="col-6 mb-5">
+        <h1>지하철 게임(1호선)</h1>
+        <strong>이름을 입력하고 Ready 버튼을 누르세요</strong>
+      </div>
+      <div class="col-3"></div>
+    </div>
+  </div>
+  <div id="nameForm" class="container-fluid">
+
+    <div class="row">
+      <div class="col-3"></div>
+      <div class="col-6">
+        <div id="nameFormStatus" class="col-6 mb-5" style="font-size: 15px;"></div>
+        <form action="#">
+          <input type="text" class="form-control mb-3" id="input_name" placeholder="이름을 입력하세요" autocomplete="off"
+            onkeydown="readyBtnOn();">
+        </form>
+        <button id="readyBtn" class="btn btn-primary mb-3" disabled onclick="ready()">Ready</button>
+      </div>
+      <div class="col-3"></div>
+    </div>
+  </div>
+  <div class="gameForm container-fluid" id="gameForm">
+    <div class="row">
+      <div class="col-3">누적 답안
+        <div id="answerList"></div>
+      </div>
+      <div class="col-6 mt-5 mb-3">
+        <div class="mb-3" id="myTurn"></div>
+        <div class="mb-3" id="timer">
+          <strong>시간 카운트</strong>
+          <span id="countTime"></span>
+          <span id="waiting"></span>
         </div>
-        <div class="col-3"></div>
+        <form action="#">
+          <input type="text" class="form-control mb-3" id="gameText" placeholder="역명을 입력하세요" autocomplete="off">
+        </form>
+        <button id="gameBtn" disabled class="btn btn-primary mb-3" onclick="gameBtnPush();">Submit</button>
+        <div class="mt-5" id="replay">
+          <fieldset>
+            <legend>다시하시겠습니까?</legend>
+            <input type='radio' name='choose' value='1' />예
+            <input type='radio' name='choose' value='2' />아니요(나가세요)
+            <button id="rePlayBtn" class="btn btn-primary mb-3" onclick='gameReplay2()'>Submit</button>
+          </fieldset>
+        </div>
+      </div>
+      <div class="col-3">
+        <div id="username0"></div>
+        <div id="username1"></div>
+        <div id="username2"></div>
       </div>
     </div>
-    <script src="/javascripts/index.js"></script>
-  </body>
+  </div>
+  </div>
+  <script src="/javascripts/index.js"></script>
+</body>
+
 </html>
